@@ -191,9 +191,13 @@ def parse_review_states(pr_node: dict):
         )
         for review in pr_node["timelineItems"]["nodes"]
         if "requestedReviewer" in review
+        and review["requestedReviewer"] is not None
+        and "login" in review["requestedReviewer"]
     }
 
     for review in pr_node["latestReviews"]["nodes"]:
+        if "login" not in review["author"]:
+            continue
         user = User(login=review["author"]["login"], name=review["author"]["name"])
         states[user.login] = ReviewState(
             when=datetime.datetime.strptime(review["createdAt"], "%Y-%m-%dT%H:%M:%SZ"),
