@@ -4,6 +4,7 @@ import json
 from enum import Enum
 from dataclasses import dataclass
 import datetime
+import requests
 
 BOLD_STYLE = "\033[1m"
 GREEN_STYLE = "\033[92m"
@@ -90,7 +91,7 @@ def get_user_display_name(user: User):
     return user.login
 
 
-def do_query(query, hostname):
+def do_query_with_cli(query, hostname):
     """Use github cli to do a graphql query."""
     try:
         return json.loads(
@@ -111,8 +112,24 @@ def do_query(query, hostname):
         exit(1)
 
 
-def fetch_data(hostname: str, repository: str, owner: str):
-    query = f"""
+def do_query_with_token(query: str, hostname: str, token: str | None):
+    """Use a personal access token to do a graphql query."""
+    headers = {}
+    if token is None:
+        headers = {"Authorization": f"bearer {token}"}
+
+    response = requests.post(
+        f"https://{hostname}/api/graphql", json={"query": query}, headers=headers
+    )
+    print(headers)
+    if response.status_code != 200:
+        print(f"Request failed: {response.status_code} {response.text}")
+        exit(1)
+    return response.json()
+
+
+def get_query(repository: str, owner: str):
+    return f"""
         query {{
             viewer {{
                 login
@@ -176,7 +193,6 @@ def fetch_data(hostname: str, repository: str, owner: str):
             }}
         }}
     """
-    return do_query(query, hostname)
 
 
 def parse_review_states(pr_node: dict):
@@ -341,12 +357,22 @@ parser = argparse.ArgumentParser(description="Github Pull Request Dashboard")
 parser.add_argument("--hostname", help="Github hostname", default="github.com")
 parser.add_argument("--owner", help="Github repository owner", required=True)
 parser.add_argument("--repository", help="Github repository", required=True)
+parser.add_argument("--token", help="Github personal access token")
+parser.add_argument(
+    "--use-cli", help="Use github cli to query github", action="store_true"
+)
 parser.add_argument(
     "--show-drafts", help="Show draft pull requests", action="store_true"
 )
 args = parser.parse_args()
 
-github_data = fetch_data(args.hostname, args.repository, args.owner)
+query = get_query(args.repository, args.owner)
+github_data = (
+    do_query_with_cli(query, args.hostname)
+    if args.use_cli
+    else do_query_with_token(query, args.hostname, args.token)
+)
+
 viewer_login = github_data["data"]["viewer"]["login"]
 
 pull_requests = parse_pull_requests(
