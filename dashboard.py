@@ -121,7 +121,6 @@ def do_query_with_token(query: str, hostname: str, token: str | None):
     response = requests.post(
         f"https://{hostname}/api/graphql", json={"query": query}, headers=headers
     )
-    print(headers)
     if response.status_code != 200:
         print(f"Request failed: {response.status_code} {response.text}")
         exit(1)
