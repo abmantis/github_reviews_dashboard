@@ -82,7 +82,7 @@ def review_status_to_emoji(status: ReviewStatus):
     elif status == ReviewStatus.COMMENTED or status == ReviewStatus.DISMISSED:
         return "💬"
     else:
-        return "⚠️ "
+        return "⚠️"
 
 
 def get_user_display_name(user: User):
