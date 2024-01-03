@@ -249,11 +249,11 @@ def get_pr_user_review_state(pr: PullRequest, user_login: str) -> ReviewState | 
 
 def get_pr_indicator(pr: PullRequest, user_login: str):
     if pr.author.login == user_login:
-        return "🞂 "
+        return "➡️"
 
     review_state = get_pr_user_review_state(pr, user_login)
     if review_state is None:
-        return "🆕"
+        return "✉️"
     if review_state.status == ReviewStatus.PENDING:
         return review_status_to_emoji(review_state.status)
     return "✅"
@@ -261,7 +261,7 @@ def get_pr_indicator(pr: PullRequest, user_login: str):
 
 def print_reviewers_for_pr(pr: PullRequest, user_login: str):
     for review_state in pr.review_states:
-        indicator = "🞂" if review_state.user.login == user_login else " "
+        indicator = "➡️" if review_state.user.login == user_login else "  "
         review_emoji = f"{review_status_to_emoji(review_state.status)} "
         reviewer_display_name = get_user_display_name(review_state.user)
 
