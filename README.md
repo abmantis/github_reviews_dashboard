@@ -4,7 +4,7 @@ This shows an overview of all the PRs in a repo and their review statuses.
 
 It works best with a flow where:
 - reviewers always leave an approving review or request changes.
-- authors always request a re-review from reviewers.
+- authors always request a re-review from reviewers when ready.
 
 When that flow is used, knowing if a PR is waiting for your review is easy: just look for a ⚠️ sign! 
 
