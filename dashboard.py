@@ -21,6 +21,12 @@ class ReviewStatus(Enum):
     PENDING = 5
 
 
+class StatusState(Enum):
+    SUCCESS = 1
+    FAILURE = 2
+    PENDING = 3
+
+
 def to_review_status(status: str):
     if status == "APPROVED":
         return ReviewStatus.APPROVED
@@ -62,6 +68,7 @@ class PullRequest:
     labels: list[Label]
     author: User
     review_states: list[ReviewState]
+    checks_status: StatusState
 
 
 def rgb_to_ansi(rgb: str):
@@ -83,6 +90,14 @@ def review_status_to_emoji(status: ReviewStatus):
         return "💬"
     else:
         return "⚠️"
+
+def get_check_status_emoji(status: StatusState):
+    if status == StatusState.SUCCESS:
+        return "🟢"
+    elif status == StatusState.FAILURE:
+        return "🔴"
+    else:
+        return "⏳"
 
 
 def get_user_display_name(user: User):
@@ -187,6 +202,15 @@ def get_query(repository: str, owner: str):
                                 }}
                             }}
                         }}
+                        commits(last: 1) {{
+                            nodes {{
+                                commit {{
+                                    statusCheckRollup {{
+                                      state
+                                    }}
+                                }}
+                            }}
+                        }}
                     }}
                 }}
             }}
@@ -223,6 +247,16 @@ def parse_review_states(pr_node: dict):
     return sorted(states.values(), key=lambda state: state.user.login)
 
 
+def parse_check_status(pr_node: dict) -> StatusState:
+    status_str = pr_node["commits"]["nodes"][0]["commit"]["statusCheckRollup"]["state"]
+    if status_str == "SUCCESS":
+        return StatusState.SUCCESS
+    elif status_str == "PENDING":
+        return StatusState.PENDING
+    else:
+        return StatusState.FAILURE
+
+
 def parse_pull_requests(pr_nodes: list[dict]):
     return [
         PullRequest(
@@ -235,6 +269,7 @@ def parse_pull_requests(pr_nodes: list[dict]):
             ],
             author=User(login=pr["author"]["login"], name=pr["author"]["name"]),
             review_states=parse_review_states(pr),
+            checks_status=parse_check_status(pr),
         )
         for pr in pr_nodes
     ]
@@ -296,11 +331,13 @@ def print_pull_requests(
         author_style = GREEN_STYLE if pr.author.login == user_login else ""
         author_str = f"{author_style}[{get_user_display_name(pr.author)}]{RESET_STYLE}"
 
+        status_str = get_check_status_emoji(pr.checks_status)
+
         print(
             f"{BOLD_STYLE}{get_pr_indicator(pr, user_login)}"
             f" #{pr.number}: {pr.title}{RESET_STYLE} {author_str} {labels_str}"
         )
-        print(f"   {GREY_STYLE}{pr.url}{RESET_STYLE}")
+        print(f"   {GREY_STYLE}{pr.url}{RESET_STYLE} {status_str}")
 
         if print_reviewers:
             print_reviewers_for_pr(pr, user_login)
