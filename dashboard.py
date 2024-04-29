@@ -70,7 +70,7 @@ class PullRequest:
     labels: list[Label]
     author: User
     review_states: list[ReviewState]
-    checks_status: StatusState
+    checks_status: StatusState | None
 
 
 def rgb_to_ansi(rgb: str):
@@ -93,13 +93,15 @@ def review_status_to_emoji(status: ReviewStatus):
     else:
         return "⚠️"
 
-def get_check_status_emoji(status: StatusState):
+
+def get_check_status_emoji(status: StatusState | None):
     if status == StatusState.SUCCESS:
         return "🟢"
     elif status == StatusState.FAILURE:
         return "🔴"
-    else:
+    elif status == StatusState.PENDING:
         return "⏳"
+    return ""
 
 
 def get_user_display_name(user: User):
@@ -249,8 +251,12 @@ def parse_review_states(pr_node: dict):
     return sorted(states.values(), key=lambda state: state.user.login)
 
 
-def parse_check_status(pr_node: dict) -> StatusState:
-    status_str = pr_node["commits"]["nodes"][0]["commit"]["statusCheckRollup"]["state"]
+def parse_check_status(pr_node: dict) -> StatusState | None:
+    statusCheckRollup = pr_node["commits"]["nodes"][0]["commit"]["statusCheckRollup"]
+    if statusCheckRollup is None or "state" not in statusCheckRollup:
+        return None
+
+    status_str = statusCheckRollup["state"]
     if status_str == "SUCCESS":
         return StatusState.SUCCESS
     elif status_str == "PENDING":
