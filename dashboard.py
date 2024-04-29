@@ -408,6 +408,11 @@ parser.add_argument(
 parser.add_argument(
     "--show-drafts", help="Show draft pull requests", action="store_true"
 )
+parser.add_argument(
+    "--hide-not-reviewer",
+    help="Hide pull requests where the user is not a reviewer",
+    action="store_true",
+)
 args = parser.parse_args()
 
 query = get_query(args.repository, args.owner)
@@ -425,6 +430,13 @@ pull_requests = parse_pull_requests(
 
 if not args.show_drafts:
     pull_requests = [pr for pr in pull_requests if not pr.isDraft]
+
+if args.hide_not_reviewer:
+    pull_requests = [
+        pr
+        for pr in pull_requests
+        if get_pr_user_review_state(pr, viewer_login) is not None
+    ]
 
 print_pull_requests(pull_requests, viewer_login)
 print_user_stats(pull_requests, viewer_login)
