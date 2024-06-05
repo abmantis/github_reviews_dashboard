@@ -13,7 +13,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 requires-python = ">=3.9"
-dependencies = [ ]
+dependencies = [ "requests" ]
 
 [project.readme]
 file = "README.md"
@@ -21,6 +21,9 @@ content-type = "text/markdown"
 
 [project.urls]
 Homepage = "https://github.com/abmantis/github_reviews_dashboard"
+
+[project.scripts]
+github-reviews-dashboard = "dashboard:main"
 
 [tool.setuptools]
 include-package-data = false

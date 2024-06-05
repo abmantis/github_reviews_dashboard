@@ -397,46 +397,51 @@ def print_user_stats(pull_requests: list[PullRequest], user_login: str):
     print()
 
 
-parser = argparse.ArgumentParser(description="Github Pull Request Dashboard")
-parser.add_argument("--hostname", help="Github hostname", default="github.com")
-parser.add_argument("--owner", help="Github repository owner", required=True)
-parser.add_argument("--repository", help="Github repository", required=True)
-parser.add_argument("--token", help="Github personal access token")
-parser.add_argument(
-    "--use-cli", help="Use github cli to query github", action="store_true"
-)
-parser.add_argument(
-    "--show-drafts", help="Show draft pull requests", action="store_true"
-)
-parser.add_argument(
-    "--hide-not-reviewer",
-    help="Hide pull requests where the user is not a reviewer",
-    action="store_true",
-)
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser(description="Github Pull Request Dashboard")
+    parser.add_argument("--hostname", help="Github hostname", default="github.com")
+    parser.add_argument("--owner", help="Github repository owner", required=True)
+    parser.add_argument("--repository", help="Github repository", required=True)
+    parser.add_argument("--token", help="Github personal access token")
+    parser.add_argument(
+        "--use-cli", help="Use github cli to query github", action="store_true"
+    )
+    parser.add_argument(
+        "--show-drafts", help="Show draft pull requests", action="store_true"
+    )
+    parser.add_argument(
+        "--hide-not-reviewer",
+        help="Hide pull requests where the user is not a reviewer",
+        action="store_true",
+    )
+    args = parser.parse_args()
 
-query = get_query(args.repository, args.owner)
-github_data = (
-    do_query_with_cli(query, args.hostname)
-    if args.use_cli
-    else do_query_with_token(query, args.hostname, args.token)
-)
+    query = get_query(args.repository, args.owner)
+    github_data = (
+        do_query_with_cli(query, args.hostname)
+        if args.use_cli
+        else do_query_with_token(query, args.hostname, args.token)
+    )
 
-viewer_login = github_data["data"]["viewer"]["login"]
+    viewer_login = github_data["data"]["viewer"]["login"]
 
-pull_requests = parse_pull_requests(
-    github_data["data"]["repository"]["pullRequests"]["nodes"]
-)
+    pull_requests = parse_pull_requests(
+        github_data["data"]["repository"]["pullRequests"]["nodes"]
+    )
 
-if not args.show_drafts:
-    pull_requests = [pr for pr in pull_requests if not pr.isDraft]
+    if not args.show_drafts:
+        pull_requests = [pr for pr in pull_requests if not pr.isDraft]
 
-if args.hide_not_reviewer:
-    pull_requests = [
-        pr
-        for pr in pull_requests
-        if get_pr_user_review_state(pr, viewer_login) is not None
-    ]
+    if args.hide_not_reviewer:
+        pull_requests = [
+            pr
+            for pr in pull_requests
+            if get_pr_user_review_state(pr, viewer_login) is not None
+        ]
 
-print_pull_requests(pull_requests, viewer_login)
-print_user_stats(pull_requests, viewer_login)
+    print_pull_requests(pull_requests, viewer_login)
+    print_user_stats(pull_requests, viewer_login)
+
+if __name__ == "__main__":
+    main()
+
