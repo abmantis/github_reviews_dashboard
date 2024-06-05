@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "github-reviews-dashboard"
+version = "1.0"
+authors = [{name = "Abílio Costa", email = "amfcalt@gmail.com"}]
+description = "A CLI dashboard for Github pull requests reviews "
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.9"
+dependencies = [ ]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/abmantis/github_reviews_dashboard"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.ruff.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = false
+
+[tool.ruff.mccabe]
+max-complexity = 25
+
