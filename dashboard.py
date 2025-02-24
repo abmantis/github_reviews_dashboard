@@ -327,15 +327,23 @@ def print_reviewers_for_pr(pr: PullRequest, user_login: str):
 
 
 def print_pull_requests(
-    pull_requests: list[PullRequest], user_login: str, print_reviewers: bool = True
+    pull_requests: list[PullRequest],
+    user_login: str,
+    print_reviewers: bool = True,
+    print_labels=False,
 ):
     for pr in pull_requests:
-        labels_str = " ".join(
-            [
-                f"{rgb_to_ansi_background(label.color)}{label.name}{RESET_STYLE}"
-                for label in pr.labels
-            ]
+        labels_str = (
+            " ".join(
+                [
+                    f"{rgb_to_ansi_background(label.color)}{label.name}{RESET_STYLE}"
+                    for label in pr.labels
+                ]
+            )
+            if print_labels
+            else ""
         )
+
         author_style = GREEN_STYLE if pr.author.login == user_login else ""
         author_str = f"{author_style}[{get_user_display_name(pr.author)}]{RESET_STYLE}"
 
@@ -414,6 +422,9 @@ def main():
         help="Hide pull requests where the user is not a reviewer",
         action="store_true",
     )
+    parser.add_argument(
+        "--print-labels", help="Print PR labels", action="store_true"
+    )
     args = parser.parse_args()
 
     query = get_query(args.repository, args.owner)
@@ -439,9 +450,8 @@ def main():
             if get_pr_user_review_state(pr, viewer_login) is not None
         ]
 
-    print_pull_requests(pull_requests, viewer_login)
+    print_pull_requests(pull_requests, viewer_login, print_labels=args.print_labels)
     print_user_stats(pull_requests, viewer_login)
-
 if __name__ == "__main__":
     main()
 
