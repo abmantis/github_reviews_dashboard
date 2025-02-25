@@ -146,15 +146,17 @@ def do_query_with_token(query: str, hostname: str, token: str | None):
     return response.json()
 
 
-def get_query(repository: str, owner: str):
+def get_query(repository: str, owner: str, show_drafts: bool, hide_not_reviewer: bool):
+    draft_filter = "draft:false" if not show_drafts else ""
+    hide_not_reviewer_filter = "reviewed-by:@me" if hide_not_reviewer else ""
     return f"""
         query {{
             viewer {{
                 login
             }}
-            repository(owner: "{owner}", name: "{repository}") {{
-                pullRequests(last: 100, states: OPEN) {{
-                    nodes {{
+            search(first: 100, query: "repo:{owner}/{repository} is:pr is:open {draft_filter} {hide_not_reviewer_filter}", type: ISSUE) {{
+                nodes {{
+                  ... on PullRequest {{
                         number
                         title
                         url
@@ -427,7 +429,7 @@ def main():
     )
     args = parser.parse_args()
 
-    query = get_query(args.repository, args.owner)
+    query = get_query(args.repository, args.owner, args.show_drafts, args.hide_not_reviewer)
     github_data = (
         do_query_with_cli(query, args.hostname)
         if args.use_cli
@@ -436,22 +438,9 @@ def main():
 
     viewer_login = github_data["data"]["viewer"]["login"]
 
-    pull_requests = parse_pull_requests(
-        github_data["data"]["repository"]["pullRequests"]["nodes"]
-    )
-
-    if not args.show_drafts:
-        pull_requests = [pr for pr in pull_requests if not pr.isDraft]
-
-    if args.hide_not_reviewer:
-        pull_requests = [
-            pr
-            for pr in pull_requests
-            if get_pr_user_review_state(pr, viewer_login) is not None
-        ]
+    pull_requests = parse_pull_requests(github_data["data"]["search"]["nodes"])
 
     print_pull_requests(pull_requests, viewer_login, print_labels=args.print_labels)
     print_user_stats(pull_requests, viewer_login)
 if __name__ == "__main__":
     main()
-
